@@ -1,54 +1,58 @@
+
 pipeline {
-  agent any
+    agent any
 
-  stages {
-      stage('Build') {
-      agent {
-        docker { image 'django==3.2' }
-      }
-      steps {
-            // Run the Django server in the foreground
-            sh 'python3 manage.py check' 
-            echo 'Django server started. Proceeding to next stage...'
-      }
-    }
-
-    stage('Deploy') {
-      steps {
-        // Build the image
-        sh 'docker build -t todo .'
-        
-        // Run the container with a specific name (e.g., 'todo_container')
-        sh 'docker run -d -p 8000:8000 --name todo_container todo'
-      }
-      post {
-        always {
-          echo 'Waiting for 2 minutes before stopping and deleting containers...'
-          // Sleep for 2 minutes before stopping and deleting containers
-          sleep 120
-
-          // Stop the container using its name
-          echo 'Stopping container...'
-          sh 'docker stop todo_container'
-
-          // Remove the container
-          echo 'Removing container...'
-          sh 'docker rm todo_container'
+    stages {
+        stage('Build') {
+            agent {
+                docker {
+                    image 'python:3.9-slim'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh 'pip install Django==3.2'
+                sh 'python3 manage.py check'
+                echo 'Django checks passed successfully.'
+            }
         }
-      }
-    }
-  }
-}
-post {
-    success {
-        echo 'Pipeline executed successfully'
+
+        stage('Deploy') {
+            steps {
+                // Build the image
+                sh 'docker build -t todo .'
+
+                // Run the container
+                sh 'docker run -d -p 8000:8000 --name todo_container todo'
+            }
+
+            post {
+                always {
+                    echo 'Waiting for 2 minutes before cleanup...'
+                    sleep 120
+
+                    echo 'Stopping container...'
+                    sh 'docker stop todo_container || true'
+
+                    echo 'Removing container...'
+                    sh 'docker rm todo_container || true'
+                }
+            }
+        }
     }
 
-    failure {
-        echo 'Pipeline execution failed'
-    }
+    // Task 1: Pipeline Failure Handling
+    post {
+        success {
+            echo 'Pipeline executed successfully'
+        }
 
-    always {
-        echo 'Pipeline execution completed'
+        failure {
+            echo 'Pipeline execution failed'
+        }
+
+        always {
+            echo 'Pipeline execution completed'
+        }
     }
 }
