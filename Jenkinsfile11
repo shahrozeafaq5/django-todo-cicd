@@ -20,7 +20,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 // Build the image
-                sh 'docker build -t todo .'
+                sh 'docker build -t todo invalid-directory'
 
                 // Run the container
                 sh 'docker run -d -p 8000:8000 --name todo_container todo'
