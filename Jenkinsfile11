@@ -4,11 +4,13 @@ pipeline {
 
     stages {
         stage('Build') {
-            agent {
-                docker {
-                    image 'python:3.9-slim'
-                    reuseNode true
-                }
+agent {
+    docker {
+        image 'python:3.9-slim'
+        reuseNode true
+        args '-u root'
+    }
+}
             }
             steps {
                 sh 'pip install Django==3.2'
